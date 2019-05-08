@@ -117,7 +117,7 @@ function incrementCurrSq(){
 		else currSq_j++;
 	}
 }
-function setPrize(){
+function setPrize(set){
 	var row = Math.floor(Math.random()*num_rows);
 	var col = Math.floor(Math.random()*num_cols);
 	while(sq_arr[row][col].type != "empty"){
@@ -126,6 +126,8 @@ function setPrize(){
 	}
 	prize_i=row,prize_j=col;
 	sq_arr[row][col].updateVal(-100);
+	if(set) setTimeout(runGame, timeOutTime);
+
 }
 function runGame(){
 	if(autoPlay) decideAutoplayDirection();
@@ -134,13 +136,17 @@ function runGame(){
 	if(sq_arr[currSq_i][currSq_j].type == "prize"){ 
 		snake_length++;
 		prize_audio.play();
-		if(snake_length == num_rows*num_cols){
+		if(snake_length >= num_rows*num_cols){
 			gameOver=true;
 			gameWon=true;
+			runGameEnd();
+			return;
 		}
-		setPrize();
+		sq_arr[currSq_i][currSq_j].updateVal(snake_length,dir);
+		setPrize(true);
+		return;
 	}
-	else if(sq_arr[currSq_i][currSq_j].type == "snake")
+	if(sq_arr[currSq_i][currSq_j].type == "snake")
 		gameOver=true;
 	sq_arr[currSq_i][currSq_j].updateVal(snake_length,dir);
 	if(!gameOver) setTimeout(runGame, timeOutTime);
@@ -151,26 +157,28 @@ function restart(){
 	var highestTimeoutId = setTimeout(";");
 	for (var i = 0 ; i < highestTimeoutId ; i++)
 	    clearTimeout(i); 
-	$("#snake_container").empty();
-	sq_arr=[];
-	init();
+	snake_length=defaultSnakeLength;
 	gameOver=false;
 	gameWon=false;
 	autoPlay=false;
 	disableInput=false;
+	$("#snake_container").empty();
 	$("#autoPlaySwitch").prop("checked",false);
-	$("#autoPlaySwitchContainer").tooltip('hide').attr('data-original-title', "Enable autoplay");
-	snake_length=defaultSnakeLength;
+	currSq_i=Math.floor(num_rows/2);
+	currSq_j=Math.floor(num_cols/2);
 	curr_dir="left";
-	setPrize();
+	wrap=true;
+	sq_arr=[];
+	setNewSpeed(defaultTimeOutTime);
+	$("#autoPlaySwitchContainer").tooltip('hide').attr('data-original-title', "Enable autoplay");
+	$("#wrapSwitch").prop("disabled",false);
 	$("#wrapSwitch").prop("checked",true);
 	$("#wrapSwitchContainer").attr('data-original-title', "Disable wrapping");
-	wrap=true;
-	currSq_i=Math.floor(num_rows/2), currSq_j=Math.floor(num_cols/2);
-	setNewSpeed(defaultTimeOutTime);
 	$("#speedSlider").tooltip("hide");
 	$("#speedSlider").prop("value","95");
 	$("#GameStartButton").removeAttr("disabled");
+	init();
+	setPrize();
 	runGame();
 	$(".loading-cover").fadeOut();
 }
@@ -202,6 +210,17 @@ function toggleAutoPlay(){
 	autoPlay = !autoPlay;
 	if(autoPlay) $("#autoPlaySwitchContainer").tooltip('hide').attr('data-original-title', "Disable autoplay").tooltip('show');
 	else $("#autoPlaySwitchContainer").tooltip('hide').attr('data-original-title', "Enable autoplay").tooltip('show');
+	if(autoPlay){
+		wrap=true;
+		$("#wrapSwitch").prop("checked",true);
+		$("#wrapSwitchContainer").attr('data-original-title', "Not allowed");
+		$("#wrapSwitch").prop("disabled",true);
+	}
+	else{
+		$("#wrapSwitch").prop("checked",true);
+		$("#wrapSwitchContainer").attr('data-original-title', "Disabling wrapping");
+		$("#wrapSwitch").prop("disabled",false);
+	}
 }
 function runGameEnd(){
 	var msg = "Looks like you failed...";
@@ -244,12 +263,11 @@ function decideAutoplayDirection(){
 		}
 	}
 	if(curr_dir == "left" || curr_dir == "right"){
-		if(!snakeExists("up") && currSq_i!=0) curr_dir = "up";
-		else if(!snakeExists("down")) curr_dir = "down";
+		if(currSq_i!=0) curr_dir = "up";
+		else curr_dir = "down";
 	}
 	else if((curr_dir == "up" || curr_dir == "down") && (currSq_i==num_rows-1 || currSq_i==0)){
-		if(!snakeExists("left") && (currSq_j!=0 || (currSq_j==0 && wrap==true))) curr_dir = "left";
-		else if(!snakeExists("right") && (currSq_j!=num_cols-1 || (currSq_j==num_cols-1 && wrap==true))) curr_dir = "right";
+		curr_dir = "left";
 	}
 }
 function showAutoPlayWarning(){
