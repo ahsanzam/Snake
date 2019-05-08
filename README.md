@@ -1,5 +1,5 @@
 # Snake
-A game of snake written in plain JS.
+A game of snake written in plain JS and JQuery.
 
 Run by visiting index.html.
 
